@@ -1,9 +1,14 @@
+import "dotenv/config";
+import "./database/init";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { setupExpressServer } from "./http";
 import { setupWebSocket } from "./ws";
 import cors from "cors";
+import { connectToDb } from "./database/init";
+
+connectToDb();
 
 const PORT = process.env.PORT || 8080;
 

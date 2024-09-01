@@ -1,10 +1,10 @@
-import type { AuthenticatedSocket } from "./types";
 import { clerkClient } from "@clerk/clerk-sdk-node";
+import { and, eq } from "drizzle-orm";
+import { applyPatch } from "rfc6902";
 import { Server } from "socket.io";
 import { db } from "./database/init";
 import { docsTable } from "./database/schemas/docs";
-import { eq, and, sql } from "drizzle-orm";
-import { applyPatch } from "rfc6902"; // You'll need to install this package
+import type { AuthenticatedSocket } from "./types";
 
 export const setupWebSocket = (io: Server) => {
   // Map of socket ID to @AuthenticatedSocket
@@ -43,6 +43,11 @@ export const setupWebSocket = (io: Server) => {
         ...sockets,
         authenticatedClients.get(socket.id)!,
       ]);
+
+      socket.join(documentId);
+      socket
+        .to(documentId)
+        .emit("user-joined", authenticatedClients.get(socket.id)!);
     });
 
     // Handle document changes
@@ -93,12 +98,14 @@ export const setupWebSocket = (io: Server) => {
         }
 
         // Broadcast the change to all clients in the document
-        const socketsInDocument = documentSockets.get(documentId) || [];
-        socketsInDocument.forEach((client) => {
-          if (client.socket.id !== socket.id) {
-            client.socket.emit("document-updated", documentId, patches);
-          }
-        });
+        // const socketsInDocument = documentSockets.get(documentId) || [];
+        // socketsInDocument.forEach((client) => {
+        //   if (client.socket.id !== socket.id) {
+        //     client.socket.emit("document-updated", documentId, patches);
+        //   }
+        // });
+
+        socket.to(documentId).emit("document-updated", documentId, patches);
       } catch (error) {
         console.error("Error updating document:", error);
         socket.emit("error", "Failed to update document");

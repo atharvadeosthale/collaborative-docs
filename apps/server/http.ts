@@ -8,7 +8,7 @@ import { authenticate } from "./middlewares/auth";
 
 export const setupExpressServer = (app: Express) => {
   app.get("/", (req, res) => {
-    res.json("Things working!");
+    res.json({ message: "Things working!" });
   });
 
   app.post("/documents", authenticate, async (req, res) => {

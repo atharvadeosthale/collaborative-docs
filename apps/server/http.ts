@@ -1,9 +1,7 @@
 import { Express } from "express";
 import { db } from "./database/init";
 import { docsTable } from "./database/schemas/docs";
-import { clerkClient } from "@clerk/clerk-sdk-node";
 import { eq } from "drizzle-orm";
-import { Session } from "@clerk/clerk-sdk-node";
 import { authenticate } from "./middlewares/auth";
 
 export const setupExpressServer = (app: Express) => {

@@ -17,12 +17,18 @@ export const setupWebSocket = (io: Server) => {
     console.log(`New connection: ${socket.id}`);
 
     // Authenticate the client
-    socket.on("auth", async (sessionId: string, token: string) => {
+    socket.on("auth", async (token: string) => {
       try {
-        const session = await clerkClient.sessions.verifySession(
-          sessionId,
-          token
+        const tokenVerification = await clerkClient.verifyToken(token);
+
+        if (!tokenVerification.sid) throw new Error("Invalid token");
+
+        const session = await clerkClient.sessions.getSession(
+          tokenVerification.sid
         );
+
+        if (!session) throw new Error("Invalid session");
+
         const user = await clerkClient.users.getUser(session.userId);
 
         authenticatedClients.set(socket.id, { socket, userId: user.id });

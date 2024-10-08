@@ -7,21 +7,25 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
-  const sessionId = req.headers["x-session-id"];
 
-  if (!authHeader || !authHeader.startsWith("Bearer ") || !sessionId) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(400).json({
-      error: "Missing or invalid Authorization header or X-Session-ID",
+      error: "Missing or invalid Authorization header",
     });
   }
 
   const token = authHeader.split(" ")[1];
 
   try {
-    const session: Session = await clerkClient.sessions.verifySession(
-      sessionId as string,
-      token
+    const tokenVerification = await clerkClient.verifyToken(token);
+
+    if (!tokenVerification.sid) throw new Error("Invalid token");
+
+    const session = await clerkClient.sessions.getSession(
+      tokenVerification.sid
     );
+
+    if (!session) throw new Error("Invalid session");
 
     req.session = session;
     next();

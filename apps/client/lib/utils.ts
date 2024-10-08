@@ -8,4 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+  headers: {
+    Cache: "no-store",
+  },
 });

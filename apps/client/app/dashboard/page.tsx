@@ -1,19 +1,24 @@
-import { axiosInstance } from "@/lib/utils";
-import { auth } from "@clerk/nextjs/server";
-import React from "react";
+import AllDocuments from "@/components/documents/all-documents";
+import { Button } from "@/components/ui/button";
+import React, { Suspense } from "react";
 
 export default async function Dashboard() {
-  const { sessionId, getToken } = await auth();
+  return (
+    <div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-xl">Your Documents</h1>
+        </div>
+        <div>
+          <Button>New Document</Button>
+        </div>
+      </div>
 
-  const response = await axiosInstance.get("/documents", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${await getToken()}`,
-      "X-Session-ID": sessionId,
-    },
-  });
-
-  console.log(response.data);
-
-  return <div>Dashboard</div>;
+      <div className="mt-10">
+        <Suspense fallback={<div>Loading...</div>}>
+          <AllDocuments />
+        </Suspense>
+      </div>
+    </div>
+  );
 }

@@ -12,7 +12,7 @@ export default async function Navbar() {
       <div className="flex justify-between items-center py-7">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">
-            <Link href="/">Collaborative Documents</Link>
+            <Link href="/">CD</Link>
           </h1>
         </div>
         <div className="flex items-center gap-5">

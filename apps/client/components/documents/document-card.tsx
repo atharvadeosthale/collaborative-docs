@@ -15,9 +15,9 @@ export default function DocumentCard({
       >
         {title}
       </Link>
-      <button className="ml-4 text-2xl" aria-label="Open document">
+      <Link href={`/documents/${id}`} className="ml-4 text-2xl">
         &rarr;
-      </button>
+      </Link>
     </div>
   );
 }

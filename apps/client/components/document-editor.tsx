@@ -1,10 +1,24 @@
 "use client";
 
+import MarkdownEditor from "@uiw/react-markdown-editor";
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-export default function DocumentEditor({ id }: { id: string }) {
+export default function DocumentEditor({
+  id,
+  content,
+}: {
+  id: string;
+  content: string;
+}) {
   const [socket, setSocket] = useState<Socket>();
+  const [documentContent, setDocumentContent] = useState(content);
+
+  console.log(documentContent, content);
+
+  // useEffect(() => {
+  //   setDocumentContent(content);
+  // }, [content]);
 
   useEffect(() => {
     const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL);
@@ -40,5 +54,18 @@ export default function DocumentEditor({ id }: { id: string }) {
     });
   };
 
-  return <div>DocumentEditor</div>;
+  const handleChange = (value: string) => {
+    // socket?.emit("document-update", id, value);
+  };
+
+  return (
+    <div>
+      <MarkdownEditor
+        value={documentContent}
+        onChange={handleChange}
+        className="min-h-96"
+        visible
+      />
+    </div>
+  );
 }

@@ -5,7 +5,7 @@ import { Server } from "socket.io";
 import { db } from "./database/init";
 import { docsTable } from "./database/schemas/docs";
 import { ParsedDiff, applyPatch } from "diff";
-import type { AuthenticatedSocket } from "./types";
+import type { AuthenticatedSocket, Change } from "./types";
 
 export const setupWebSocket = (io: Server) => {
   // Map of socket ID to @AuthenticatedSocket
@@ -77,7 +77,7 @@ export const setupWebSocket = (io: Server) => {
     // Handle document changes
     socket.on(
       "document-change",
-      async (patches: string | ParsedDiff | [ParsedDiff]) => {
+      async (patches: string | Change | Change[]) => {
         if (!authenticatedClients.has(socket.id)) {
           return socket.emit("error", "Unauthorized");
         }
@@ -85,7 +85,7 @@ export const setupWebSocket = (io: Server) => {
         const authenticatedSocket = authenticatedClients.get(socket.id)!;
         const documentId = socketDocumentMap.get(socket.id)!;
 
-        console.log("documentId", documentId);
+        console.log("Received patches:", patches);
 
         if (!documentId) {
           return socket.emit("error", "You are not connected to any document");
@@ -110,27 +110,38 @@ export const setupWebSocket = (io: Server) => {
             );
           }
 
-          // // Apply the patches to the current content
-          let content = currentDoc.content;
-          // applyPatch(newContent, patches);
-          const appliedPatches: string = await new Promise(
-            (resolve, reject) => {
-              const result = applyPatch(content as string, patches.toString());
-              if (result !== false) {
-                resolve(result);
-              } else {
-                reject(new Error("Failed to apply patches"));
-              }
-            }
-          );
+          // Apply the patches to the current content
+          let content = currentDoc.content || "";
+          let appliedPatches: string;
 
-          if (!appliedPatches) {
-            return socket.emit("error", "Failed to update document");
+          if (typeof patches === "string") {
+            appliedPatches = patches;
+          } else {
+            // Handle diff-chars output
+            const patchArray = Array.isArray(patches) ? patches : [patches];
+            let newContent = content;
+            let offset = 0;
+
+            patchArray.forEach((change) => {
+              if (change.added) {
+                newContent =
+                  newContent.slice(0, offset) +
+                  change.value +
+                  newContent.slice(offset);
+                offset += change.value.length;
+              } else if (change.removed) {
+                newContent =
+                  newContent.slice(0, offset) +
+                  newContent.slice(offset + change.value.length);
+              } else {
+                offset += change.value.length;
+              }
+            });
+
+            appliedPatches = newContent;
           }
 
-          console.log("appliedPatches", appliedPatches);
-
-          // console.log("newContent", newContent);
+          console.log("Applied content:", appliedPatches);
 
           // Update the document with the new content
           const result = await db
@@ -138,24 +149,15 @@ export const setupWebSocket = (io: Server) => {
             .set({ content: appliedPatches })
             .where(
               and(
-                eq(docsTable.id, parseInt(documentId))
-                // eq(docsTable.userId, authenticatedSocket.userId)
+                eq(docsTable.id, parseInt(documentId)),
+                eq(docsTable.userId, authenticatedSocket.userId)
               )
             )
             .returning();
 
-          console.log("result", result);
           if (result.length === 0) {
             return socket.emit("error", "Failed to update document");
           }
-
-          // Broadcast the change to all clients in the document
-          // const socketsInDocument = documentSockets.get(documentId) || [];
-          // socketsInDocument.forEach((client) => {
-          //   if (client.socket.id !== socket.id) {
-          //     client.socket.emit("document-updated", documentId, patches);
-          //   }
-          // });
 
           socket.to(documentId).emit("document-updated", documentId, patches);
         } catch (error) {

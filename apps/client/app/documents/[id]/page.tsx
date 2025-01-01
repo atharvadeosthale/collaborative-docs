@@ -4,7 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import React from "react";
 
-export default async function Document({ params }: { params: { id: string } }) {
+export default async function Document(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   // TODO: Wrap suspense so that this is non-blocking
   const getDocument = async (id: string) => {
     try {
